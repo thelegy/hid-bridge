@@ -29,6 +29,8 @@
         overlays = [(import rust-overlay)];
       };
 
+      INPUT_EVENT_CODES_PATH = "${pkgs.linuxHeaders}/include/linux/input-event-codes.h";
+
       selectToolchain = p:
         p.rust-bin.stable.latest.default.override {
           targets = ["thumbv6m-none-eabi"];
@@ -66,6 +68,8 @@
       cargoArtifacts = craneLib.buildDepsOnly (commonArgs
         // {
           pname = "hid-bridge-deps";
+
+          inherit INPUT_EVENT_CODES_PATH;
         });
 
       hid-bridge-rp = craneLib.buildPackage (commonArgs
@@ -85,10 +89,9 @@
           '';
         });
 
-      watch =
-        pkgs.writeScriptBin "watch" ''
-        cargo watch -x 'check'
-        '';
+      watch = pkgs.writeScriptBin "watch" ''
+        cargo watch --clear --delay .1 -x 'clippy'
+      '';
     in {
       checks = {
         inherit hid-bridge-rp;
@@ -98,6 +101,8 @@
 
       devShells.default = craneLib.devShell {
         checks = self.checks.${system};
+
+        inherit INPUT_EVENT_CODES_PATH;
 
         packages = [
           pkgs.probe-rs
